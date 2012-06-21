@@ -77,9 +77,9 @@ object *t;
  
  https://github.com/petermichaux/bootstrap-scheme/blob/b24bc9dfe11b9caf20805c854382232ad57c46e8/scheme.c
 */
-void eat_whitespace(FILE *in) {
+void eat_whitespace (FILE *in) {
     int c;
-    
+
     while ((c = getc(in)) != EOF) {
         if (isspace(c)) {
             continue;
