@@ -202,6 +202,13 @@ object *read_cons (FILE *in)
   object *car, *cdr;
   int c;
 
+  c = getc (in);
+
+  if (c == ')')
+    return nil;
+
+  ungetc (c, in);
+
   car = read (in);
 
   eat_whitespace (in);
@@ -214,7 +221,6 @@ object *read_cons (FILE *in)
       fprintf (stderr, "Not putting anything after your dots, eh?\n");
       return nil;
     }
-
     cdr = read (in);
     eat_whitespace (in);
 
@@ -224,11 +230,7 @@ object *read_cons (FILE *in)
       fprintf (stderr, "Missing final paren! All is lost! All is lost!\n");
       return nil;
     }
-  } else if (c == ')') { // End the list
-
-    cdr = nil;
   } else { // Add more items to the list
-
     ungetc (c, in);
     cdr = read_cons (in);
   }
@@ -236,6 +238,30 @@ object *read_cons (FILE *in)
   o->data.cons.car = car;
   o->data.cons.cdr = cdr;
   return o;
+}
+
+object *read_symbol (FILE *in)
+{
+  int c, i;
+#define BUFFER_SIZE 1000
+  char buffer[BUFFER_SIZE];
+
+  i = 0;
+  while (!is_delimiter(c = getc (in))) {
+    buffer[i++] = c;
+  }
+
+  buffer[i] = '\0';
+
+  ungetc (c, in);
+
+  if (strcmp (buffer, "nil") == 0) {
+      return nil;
+      //  } IS IT A SYMBOL? {
+  } else {
+    fprintf (stderr, "What's that supposed to mean?\n");
+    return nil;
+  }
 }
 
 object *eval (object *o)
@@ -320,6 +346,9 @@ object *read (FILE *in)
 
   if (c == 't') {
     return t;
+  } else if (isalpha(c)) {
+    ungetc (c, in);
+    return read_symbol (in);
   } else if (c == '#' && peek(in) == '\\') {
     getc (in); // Start at the character
     return read_character (in);
