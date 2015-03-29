@@ -1,2 +1,4 @@
+FILES = types.c util.c environment.c function.c primitives.c eval.c print.c glisp.c
+
 default:
-	gcc glisp.c -o glisp
+	gcc $(FILES) -o glisp -I. -std=c11 -g

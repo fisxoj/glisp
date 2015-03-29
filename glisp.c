@@ -3,80 +3,23 @@
 #include <string.h>
 #include <ctype.h>
 
-enum {
-  TYPE_T,
-  TYPE_NIL,
-  TYPE_SINGLETON,
-  TYPE_CHARACTER,
-  TYPE_STRING,
-  TYPE_QUOTE,
-  TYPE_FIXNUM,
-  TYPE_RATIONAL,
-  TYPE_CLASS,
-  TYPE_CONS
-} Types;
-
-typedef struct object {
-  int type;
-  union {
-    long fixnum; // Fixnum
-    struct rational {
-      int numerator;
-      int denominator;
-    } rational;
-    char character;
-    struct {
-      struct object *car;
-      struct object *cdr;
-    } cons;
-    char *string;
-  } data;
-} object;
-
-#define TYPE_PREDICATE(t, name)			\
-  char t##_p (object *o) {			\
-    return (o->type == TYPE_##name);		\
-  }
-
-TYPE_PREDICATE (t, T);
-TYPE_PREDICATE (nil, NIL);
-TYPE_PREDICATE (singleton, SINGLETON);
-TYPE_PREDICATE (character, CHARACTER);
-TYPE_PREDICATE (string, STRING);
-TYPE_PREDICATE (quote, QUOTE);
-TYPE_PREDICATE (fixnum, FIXNUM);
-TYPE_PREDICATE (rational, RATIONAL);
-TYPE_PREDICATE (class, CLASS);
-TYPE_PREDICATE (cons, CONS);
-
-#define true 0;
-#define false 1;
+#include "types.h"
+#include "global.h"
+#include "environment.h"
+#include "primitives.h"
+#include "eval.h"
+#include "print.h"
+#include "util.h"
+//#include "environment.
 
 object *read (FILE *in);
 void print (object *o);
 
-object *new_object (int type) {
-  object *o;
-
-  o = malloc (sizeof (object));
-
-  if (o == NULL) {
-    fprintf (stderr, "No more memories!\n");
-    exit (1);
-  }
-
-  o->type = type;
-
-  return o;
-}
-
-object *nil;  // nil or t, there is no try (or f)
-object *t;
-
 /* Flat out stolen from
- 
- https://github.com/petermichaux/bootstrap-scheme/blob/b24bc9dfe11b9caf20805c854382232ad57c46e8/scheme.c
+
+https://github.com/petermichaux/bootstrap-scheme/blob/b24bc9dfe11b9caf20805c854382232ad57c46e8/scheme.c
 */
+
 void eat_whitespace (FILE *in) {
     int c;
 
@@ -120,7 +63,7 @@ int matches_string (FILE *in, char *string)
     } else {
       string++;
     }
-  } 
+  }
 
   return true;
 }
@@ -243,7 +186,7 @@ object *read_cons (FILE *in)
 object *read_symbol (FILE *in)
 {
   int c, i;
-#define BUFFER_SIZE 1000
+#define BUFFER_SIZE 100
   char buffer[BUFFER_SIZE];
 
   i = 0;
@@ -259,82 +202,18 @@ object *read_symbol (FILE *in)
       return nil;
       //  } IS IT A SYMBOL? {
   } else {
-    fprintf (stderr, "What's that supposed to mean?\n");
-    return nil;
+    object *o = new_object(TYPE_SYMBOL);
+
+    o->data.symbol = malloc (i);
+    strcpy(o->data.symbol, buffer);
+    return o;
   }
 }
 
-object *eval (object *o)
-{
-  // Nothing yet
-  return o;
+object *read_quote (FILE *in) {
+  /* object *o = new_object(TYPE_QUOTE) */
+
 }
-
-void print_cons (object *o)
-{
-  object *cdr;
-
-  printf ("(");
-  print (o->data.cons.car);
-  printf (" ");
-
-  cdr = o->data.cons.cdr;
-
-  while (cons_p (cdr)) {
-    print (cdr->data.cons.car);
-
-    cdr = cdr->data.cons.cdr;
-
-    if (cons_p (cdr))
-	printf (" ");
-  }
-
-  if (!cons_p(cdr)) {
-    if (nil_p (cdr)) { // Finished with the list
-      printf (")");
-    } else { // Improper list
-      printf (" . ");
-      print (cdr);
-      printf (")");
-    }
-  }
-    
-}
-
-void print (object *o)
-{
-
-  switch (o->type) {
-  case TYPE_NIL:
-    printf ("nil");
-    break;
-  case TYPE_T:
-    printf ("t");
-    break;
-  case TYPE_CHARACTER:
-    if (o->data.character == ' ')
-      printf ("#\\space");
-    else if (o->data.character == '\n')
-      printf ("#\\newline");
-    else
-      printf ("#\\%c", o->data.character);
-    break;
-  case TYPE_FIXNUM:
-    printf ("%ld", o->data.fixnum);
-    break;
-  case TYPE_RATIONAL:
-    printf ("%d/%d", o->data.rational.numerator, o->data.rational.denominator);
-    break;
-  case TYPE_STRING:
-    printf ("\"%s\"", o->data.string);
-    break;
-  case TYPE_CONS:
-    print_cons (o);
-    break;
-  default:
-    fprintf (stderr, "I don't want to print this");
-  }
-}	   
 
 object *read (FILE *in)
 {
@@ -344,7 +223,7 @@ object *read (FILE *in)
 
   c = getc (in);
 
-  if (c == 't') {
+  if (c == 't' && is_delimiter(peek(in))) {
     return t;
   } else if (isalpha(c)) {
     ungetc (c, in);
@@ -357,7 +236,9 @@ object *read (FILE *in)
     return read_fixnum (in);
   } else if (c == '"') {
     return read_string (in);
-  }  else if (c == '(') {
+  /* } else if (c == '\'') { */
+  /*   return read_quote (in); */
+  } else if (c == '(') {
     return read_cons (in);
   } else {
     fprintf (stderr, "A what not? What does '%c' mean?\n", c);
@@ -372,8 +253,12 @@ int main (int argc, char **argv)
 
   /* Init the singletons! */
   nil = new_object (TYPE_NIL);
-
   t = new_object (TYPE_T);
+
+  global_scope = env_new (NULL);
+  current_env = global_scope;
+
+  register_primitive_functions();
 
   while (1)
     {
