@@ -19,6 +19,12 @@ object *cond (object *forms);
 
 object *apply (object *arguments);
 
+object *lambda (object *arguments);
+
+object *function (object *arguments);
+
+object *defun (object *arguments);
+
 object *setq (object *arguments);
 
 object *equal_p (object *a, object *b);

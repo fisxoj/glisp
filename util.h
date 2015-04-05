@@ -5,5 +5,5 @@
 
 
 int is_truthy (object *object);
-
+object *c_cons (object *se1, object *se2);
 #endif

@@ -2,8 +2,12 @@
 
 #include "function.h"
 #include "environment.h"
+#include "primitives.h"
+#include "eval.h"
 #include "types.h"
 #include "global.h"
+#include "util.h"
+#include "print.h"
 
 void define_function (char *name, object *(*function) (object *arguments)) {
   object *symbol = new_object (TYPE_SYMBOL);
@@ -26,6 +30,8 @@ object *call_function (object *symbol, object *arguments) {
     return (function->data.primitive_function)(arguments);
   } else {
     /* FIXME: Implement calling non-builtin functions */
-    return t;
+    // Use function's environment
+    return apply (c_cons (symbol, arguments));
   }
+
 }

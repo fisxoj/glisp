@@ -66,6 +66,9 @@ void print (object *o)
   case TYPE_SYMBOL:
     printf ("%s", o->data.symbol);
     break;
+  case TYPE_LAMBDA:
+    printf ("#<LAMBDA {%ld}>", o);
+    break;
   default:
     fprintf (stderr, "I don't want to print this");
   }

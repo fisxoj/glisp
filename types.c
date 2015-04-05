@@ -16,7 +16,7 @@ TYPE_PREDICATE (fixnum, FIXNUM);
 TYPE_PREDICATE (rational, RATIONAL);
 TYPE_PREDICATE (class, CLASS);
 TYPE_PREDICATE (cons, CONS);
-TYPE_PREDICATE (function, FUNCTION);
+TYPE_PREDICATE (lambda, LAMBDA);
 TYPE_PREDICATE (primitive, PRIMITIVE);
 
 object *new_object (int type) {

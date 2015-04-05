@@ -1,6 +1,7 @@
 #ifndef TYPES_H
 #define TYPES_H
 
+
 enum {
   TYPE_T, // 0
   TYPE_NIL, // 1
@@ -12,7 +13,7 @@ enum {
   TYPE_RATIONAL, // 7
   TYPE_CLASS, // 8
   TYPE_CONS, // 9
-  TYPE_FUNCTION, // 10
+  TYPE_LAMBDA, // 10
   TYPE_PRIMITIVE // 11
 } Types;
 
@@ -32,11 +33,31 @@ typedef struct object {
     char *string;
     char *symbol;
 
-    struct object *(*function);
+    struct {
+      struct env *env;
+      struct object *arguments;
+      struct object *body;
+    } lambda;
 
     struct object *(*primitive_function) (struct object *);
   } data;
 } object;
+
+typedef struct env {
+  struct env *parent;
+  object **symbols;
+  object **symbol_values;
+
+  int symbol_count;
+  int symbol_extent;
+
+  object **functions;
+  object **function_values;
+
+  int function_count;
+  int function_extent;
+
+} env;
 
 #define PREDICATE_HEADER(t, name)\
   char t##_p (object *o);
@@ -51,7 +72,7 @@ PREDICATE_HEADER (fixnum, FIXNUM);
 PREDICATE_HEADER (rational, RATIONAL);
 PREDICATE_HEADER (class, CLASS);
 PREDICATE_HEADER (cons, CONS);
-PREDICATE_HEADER (function, FUNCTION);
+PREDICATE_HEADER (lambda, LAMBDA);
 PREDICATE_HEADER (primitive, PRIMITIVE);
 
 #define true 0;
